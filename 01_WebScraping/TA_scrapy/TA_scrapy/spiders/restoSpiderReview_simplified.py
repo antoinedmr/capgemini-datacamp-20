@@ -95,24 +95,35 @@ class RestoReviewSpider(scrapy.Spider):
         - Get all the data you can find and that you believe interesting
         """
 
-        logger.warn(' > PARSING NEW RESTO PAGE ({})'.format(self.review_nb))
+        logger.warn(' > PARSING NEW REVIEW PAGE ({})'.format(self.review_nb))
         # Count the number of review scrapped
         self.review_nb += 1
 
         ## Initialize Storing Object
         review_item = ReviewRestoItem()
         
-        ## Populate Storing Object
+        ## Restaurant Information
+        # Name
         xpath = '//a[@class="HEADING"]/text()'
-        review_item['Name'] = response.xpath(xpath).extract_first()
+        review_item['resName'] = response.xpath(xpath).extract_first()
         # Address
         xpath = '//span[@class="street-address"]/text()'
-        review_item['Address'] = response.xpath(xpath).extract_first()
+        review_item['resAddress'] = response.xpath(xpath).extract_first()
         # Neighborhood
         xpath = '//span[@class="extended-address"]/text()'
-        review_item['Neighborhood'] = response.xpath(xpath).extract_first()
+        review_item['resNeighborhood'] = response.xpath(xpath).extract_first()
+        # Price Range
+        review_item['resPrice'] = self.resto_price
         # Restaurant Type
-        review_item['Type'] = self.resto_type
+        review_item['resType'] = self.resto_type
+        
+        ## Review Information
+        # Title
+        xpath = '//div[@id="PAGEHEADING"]/text()'
+        review_item['reviewTitle'] = response.xpath(xpath).extract_first()
+        # Content
+        xpath = '//p[@class="partial_entry"]/text()'
+        review_item['reviewContent'] = response.xpath(xpath).extract_first()
         # Rating
         xpath = ['//span[@class="ui_bubble_rating bubble_50"]/@alt', 
                 '//span[@class="ui_bubble_rating bubble_40"]/@alt',
@@ -122,14 +133,28 @@ class RestoReviewSpider(scrapy.Spider):
         for path in xpath:
             rating = response.xpath(path).extract_first()
             if rating:
-                review_item['Rating'] = rating[0]
-        # Price Range
-        review_item['Price'] = self.resto_price
-        # Review
-        xpath = '//p[@class="partial_entry"]/text()'
-        review_item['Review'] = response.xpath(xpath).extract_first()
-        # Date of Review
+                review_item['reviewRating'] = rating[0]
+        # Date of Visit
+        xpath = '//span[@class="ratingDate relativeDate"]/@title'
+        review_item['reviewDate'] = response.xpath(xpath).extract_first()
+        # Date of Visit
         xpath = '//div[@class="prw_rup prw_reviews_stay_date_hsx"]/text()'
-        review_item['Date'] = response.xpath(xpath).extract_first()
+        review_item['visitDate'] = response.xpath(xpath).extract_first()
         
+        ## User Information
+        # Name
+        xpath = '//span[@class="expand_inline scrname"]/text()'
+        review_item['userName'] = response.xpath(xpath).extract_first()
+        # Location
+        xpath = '(//div[@class="member_info"]/div)[1]/div[@class="location"]/span/text()'
+        review_item['userLocation'] = response.xpath(xpath).extract_first()
+        # Total Contributions
+        xpath = '(//div[@class="member_info"]/div)[2]/div/span[@class="badgetext"][1]/text()'
+        review_item['userContrib'] = response.xpath(xpath).extract_first()
+        # Helpful Contributions
+        xpath = '(//div[@class="member_info"]/div)[2]/div/span[@class="badgetext"][2]/text()'
+        review_item['userHelpful'] = response.xpath(xpath).extract_first()
+
         yield review_item
+
+        
